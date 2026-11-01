@@ -8,11 +8,12 @@
 <body>
 <main>
   <header><p>LAB 3 · STARTER GAME</p><h1>Coin Dash</h1>
-  <p>Collect yellow coins. Dodge red drones. How many can you collect in 45 seconds?</p></header>
-  <div id="game" aria-label="Coin Dash game. Move with arrow keys or WASD."></div>
-  <p>Move: <strong>arrow keys / WASD</strong> · Restart: <strong>R</strong></p>
+  <p>Collect gold coins. Dodge magenta drones. Grab a blue shield to be safe for a few seconds.
+  How many coins can you collect in 45 seconds?</p></header>
+  <div id="game" aria-label="Coin Dash game. Move with arrow keys or WASD, or drag on the game. Pause with P or Escape. M toggles sound."></div>
+  <p>Move: <strong>arrow keys / WASD</strong> or <strong>drag on the game</strong> · Pause: <strong>P / Esc</strong> · Restart: <strong>R</strong> or tap · <span id="sound-state">Sound: on</span> · <strong>M</strong> to toggle</p>
 </main>
 <script src="vendor/phaser-3.90.0.min.js"></script>
-<script src="settings.js"></script><script src="game.js"></script>
+<script src="settings.js"></script><script src="sounds.js"></script><script src="game.js"></script>
 </body>
 </html>
