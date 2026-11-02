@@ -2,12 +2,33 @@
 
 Pair repository for AICODE 67723 Lab 3, created from the course template. Lab run on 1 Nov 2026.
 
-Collect coins, avoid drones, and survive a 45-second round. Move with arrow keys or WASD;
-press P (or Esc) to pause and resume, and R to restart. Keys 1 / 2 / 3 choose Easy / Normal / Hard
-(2 slow, 3 normal or 5 fast drones); the choice survives a restart. This is deliberately small so
-you can add features during the lab.
+Collect coins, avoid drones and the chaser, and score as many points as you can in a 45-second
+round. This is deliberately small so you can add features during the lab.
 
 **Play it here:** https://www.avivz.net/coin-dash/
+
+## Controls
+
+| Key | Action |
+| --- | --- |
+| Arrow keys / W A S D | Move player 1 |
+| Drag or hold on the game (mouse or touch) | Move player 1 toward the pointer |
+| T | Add or remove player 2 |
+| I J K L | Move player 2 (up, left, down, right) |
+| 1 / 2 / 3 | Choose Easy / Normal / Hard and restart; the choice survives a restart |
+| P or Esc | Pause and resume |
+| M | Mute and unmute sound |
+| R | Restart the round, or tap the game after the round ends |
+
+## Rules
+
+- Player 1 scores the combo multiplier for each coin: coins taken within 2 seconds of each other
+  raise it, up to x5. Player 2 counts plain coins, shown as `P2 coins`. The best score records
+  player 1's points.
+- Every 8 coins, by either player, the level rises: drones get 10% faster and one more appears.
+- Any drone or the chaser can catch either player. The chaser steers toward player 1.
+- A blue shield protects whichever player collected it for 5 seconds.
+- A violet magnet, collected by player 1 only, pulls nearby coins toward player 1 for 5 seconds.
 
 ## Run it locally
 
@@ -41,6 +62,7 @@ laptops' JSON files together and save the combined HTML. Use the same time windo
 - `index.html`: page and script loading.
 - `style.css`: page appearance.
 - `settings.js`: round duration, speeds, colours and dimensions.
+- `sounds.js`: sound effects synthesized with the Web Audio API, and the mute state.
 - `game.js`: scene, input, collisions, score and end-of-round behaviour.
 - `vendor/phaser-3.90.0.min.js`: the pinned Phaser runtime, byte for byte the file published at
   `https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js`; `vendor/LICENSE.phaser.txt` is its MIT licence.
@@ -48,3 +70,5 @@ laptops' JSON files together and save the combined HTML. Use the same time windo
 The game draws its own shapes; there are no image or audio assets. The authored files are under the
 MIT licence in LICENSE.txt. Phaser documentation:
 https://docs.phaser.io/phaser/getting-started/making-your-first-phaser-game
+
+Pair build: Ali and Malik
