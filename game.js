@@ -34,6 +34,7 @@ class CoinDash extends Phaser.Scene {
       this.countCoin();
     });
     this.physics.add.overlap(this.player, this.drones, () => this.finish('A drone caught you!'));
+    this.spawnChaser();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
@@ -91,7 +92,26 @@ class CoinDash extends Phaser.Scene {
     drone.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
   }
 
-  update() {
+  spawnChaser() {
+    const c = COIN_DASH;
+    // Bottom-right corner: far from the player's centre start and the drones' top row.
+    this.chaser = this.add.rectangle(c.width - 30, c.height - 30, 26, 26, c.colors.chaser);
+    this.physics.add.existing(this.chaser);
+    this.chaser.body.setCollideWorldBounds(true);
+    this.chaserHeading = Phaser.Math.Angle.Between(this.chaser.x, this.chaser.y, this.player.x, this.player.y);
+    this.physics.add.overlap(this.player, this.chaser, () => this.finish('The chaser caught you!'));
+  }
+
+  steerChaser(delta) {
+    const c = COIN_DASH;
+    const target = Phaser.Math.Angle.Between(this.chaser.x, this.chaser.y, this.player.x, this.player.y);
+    const maxTurn = Phaser.Math.DegToRad(c.chaserTurnDegPerSec) * delta / 1000;
+    this.chaserHeading = Phaser.Math.Angle.RotateTo(this.chaserHeading, target, maxTurn);
+    const speed = c.droneSpeed * c.chaserSpeedFactor;
+    this.chaser.body.setVelocity(Math.cos(this.chaserHeading) * speed, Math.sin(this.chaserHeading) * speed);
+  }
+
+  update(time, delta) {
     if (this.finished) return;
     const dx = Number(this.cursors.right.isDown || this.keys.D.isDown)
       - Number(this.cursors.left.isDown || this.keys.A.isDown);
@@ -99,6 +119,7 @@ class CoinDash extends Phaser.Scene {
       - Number(this.cursors.up.isDown || this.keys.W.isDown);
     const direction = new Phaser.Math.Vector2(dx, dy).normalize().scale(COIN_DASH.playerSpeed);
     this.player.body.setVelocity(direction.x, direction.y);
+    this.steerChaser(delta);
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
     this.hud.setText(`Coins: ${this.score}                       Time: ${seconds}s`);
     if (seconds === 0) this.finish('Time is up!');

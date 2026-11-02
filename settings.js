@@ -9,5 +9,7 @@ window.COIN_DASH = {
   coinsPerLevel: 8,
   levelSpeedFactor: 1.1,
   levelDroneSafeDistance: 150,
-  colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a }
+  chaserSpeedFactor: 0.7,
+  chaserTurnDegPerSec: 90,
+  colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a, chaser: 0xb36bff }
 };
