@@ -16,6 +16,7 @@ class CoinDash extends Phaser.Scene {
     this.player = this.add.rectangle(c.width / 2, c.height / 2, 24, 24, c.colors.player);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
+    this.createPlayer2();
     this.coin = this.add.circle(100, 100, 9, c.colors.coin);
     this.physics.add.existing(this.coin);
     this.coin.body.setCircle(9);
@@ -38,6 +39,7 @@ class CoinDash extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.drones, () => this.finish('A drone caught you!'));
     this.spawnChaser();
     this.createMagnet();
+    this.setupPlayer2();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
@@ -50,7 +52,8 @@ class CoinDash extends Phaser.Scene {
     do {
       x = Phaser.Math.Between(25, c.width - 25);
       y = Phaser.Math.Between(70, c.height - 25);
-    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 60);
+    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 60
+      || this.isNearPlayer2(x, y));
     this.coin.setPosition(x, y);
     this.coin.body.reset(x, y);
   }
@@ -58,9 +61,6 @@ class CoinDash extends Phaser.Scene {
   setupLevels() {
     this.coinsCollected = 0;
     this.level = 1;
-    // Separate from the main HUD line, right-aligned so it always fits the canvas.
-    this.levelText = this.add.text(COIN_DASH.width - 18, 12, 'Level: 1',
-      { font: '18px monospace', color: '#ffffff' }).setOrigin(1, 0);
   }
 
   countCoin() {
@@ -71,7 +71,6 @@ class CoinDash extends Phaser.Scene {
   levelUp() {
     const c = COIN_DASH;
     this.level++;
-    this.levelText.setText(`Level: ${this.level}`);
     const speed = c.droneSpeed * Math.pow(c.levelSpeedFactor, this.level - 1);
     this.drones.getChildren().forEach((drone) => {
       const velocity = drone.body.velocity.clone().setLength(speed);
@@ -87,7 +86,8 @@ class CoinDash extends Phaser.Scene {
     do {
       x = Phaser.Math.Between(25, c.width - 25);
       y = Phaser.Math.Between(70, c.height - 25);
-    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < c.levelDroneSafeDistance);
+    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < c.levelDroneSafeDistance
+      || this.isNearPlayer2(x, y));
     const drone = this.add.rectangle(x, y, 26, 26, c.colors.drone);
     this.drones.add(drone);
     drone.body.setCollideWorldBounds(true).setBounce(1, 1);
@@ -171,7 +171,87 @@ class CoinDash extends Phaser.Scene {
 
   magnetHud() {
     const left = this.magnetUntil - this.time.now;
-    return left > 0 ? `   Magnet: ${(Math.ceil(left / 100) / 10).toFixed(1)}s` : '';
+    return left > 0 ? `  Magnet: ${(Math.ceil(left / 100) / 10).toFixed(1)}s` : '';
+  }
+
+  createPlayer2() {
+    const c = COIN_DASH;
+    // The scene object survives R, so this also resets to one-player mode.
+    this.score2 = 0;
+    this.player2Active = false;
+    this.player2Played = false;
+    this.player2 = this.add.rectangle(c.width / 2, c.height / 2, 24, 24, c.colors.player2);
+    this.physics.add.existing(this.player2);
+    this.player2.body.setCollideWorldBounds(true);
+    this.player2.setVisible(false);
+    this.player2.body.enable = false;
+  }
+
+  setupPlayer2() {
+    this.physics.add.overlap(this.player2, this.coin, () => {
+      if (this.finished || !this.player2Active) return;
+      this.score2++;
+      this.placeCoin();
+      this.countCoin(); // Levels count every coin collected, by either player.
+    });
+    this.physics.add.overlap(this.player2, this.drones, () => {
+      if (this.player2Active) this.finish('A drone caught player 2!');
+    });
+    this.physics.add.overlap(this.player2, this.chaser, () => {
+      if (this.player2Active) this.finish('The chaser caught player 2!');
+    });
+    this.keys2 = this.input.keyboard.addKeys('I,J,K,L');
+    // Phaser re-emits this on browser auto-repeat, so holding 2 must not flicker.
+    this.input.keyboard.on('keydown-TWO', (event) => {
+      if (!event.repeat) this.togglePlayer2();
+    });
+  }
+
+  togglePlayer2() {
+    if (this.finished) return;
+    this.player2Active = !this.player2Active;
+    this.player2.setVisible(this.player2Active);
+    if (this.player2Active) {
+      this.player2Played = true;
+      const spot = this.findPlayer2Spot();
+      this.player2.body.enable = true;
+      this.player2.setPosition(spot.x, spot.y);
+      this.player2.body.reset(spot.x, spot.y);
+    } else {
+      this.player2.body.setVelocity(0, 0);
+      this.player2.body.enable = false;
+    }
+  }
+
+  findPlayer2Spot() {
+    const c = COIN_DASH;
+    const bounds = this.physics.world.bounds;
+    const others = [this.player, this.chaser, ...this.drones.getChildren()];
+    // Of the spots 60 px from the centre, take the one furthest from anything else.
+    const spots = [[60, 0], [-60, 0], [0, 60], [0, -60]].map(([ox, oy]) => ({
+      x: Phaser.Math.Clamp(c.width / 2 + ox, bounds.x + 12, bounds.right - 12),
+      y: Phaser.Math.Clamp(c.height / 2 + oy, bounds.y + 12, bounds.bottom - 12)
+    }));
+    const clearance = (spot) => Math.min(...others.map((other) =>
+      Phaser.Math.Distance.Between(spot.x, spot.y, other.x, other.y)));
+    return spots.reduce((best, spot) => (clearance(spot) > clearance(best) ? spot : best));
+  }
+
+  isNearPlayer2(x, y) {
+    return this.player2Active
+      && Phaser.Math.Distance.Between(x, y, this.player2.x, this.player2.y) < 60;
+  }
+
+  updatePlayer2() {
+    if (!this.player2Active) return;
+    const dx = Number(this.keys2.L.isDown) - Number(this.keys2.J.isDown);
+    const dy = Number(this.keys2.K.isDown) - Number(this.keys2.I.isDown);
+    const direction = new Phaser.Math.Vector2(dx, dy).normalize().scale(COIN_DASH.playerSpeed);
+    this.player2.body.setVelocity(direction.x, direction.y);
+  }
+
+  player2EndText() {
+    return this.player2Played ? `, P2: ${this.score2}` : '';
   }
 
   update(time, delta) {
@@ -185,8 +265,10 @@ class CoinDash extends Phaser.Scene {
     this.steerChaser(delta);
     this.checkComboLapse();
     this.updateMagnet();
+    this.updatePlayer2();
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
-    this.hud.setText(`Score: ${this.score}   Combo: x${this.combo}   Time: ${seconds}s${this.magnetHud()}`);
+    const p2 = this.player2Active ? `  P2: ${this.score2}` : '';
+    this.hud.setText(`Score: ${this.score}  Combo: x${this.combo}  Level: ${this.level}  Time: ${seconds}s${p2}${this.magnetHud()}`);
     if (seconds === 0) this.finish('Time is up!');
   }
 
@@ -197,7 +279,7 @@ class CoinDash extends Phaser.Scene {
     const c = COIN_DASH;
     this.add.rectangle(c.width / 2, c.height / 2, 460, 150, 0x0a1120, 0.95);
     this.add.text(c.width / 2, c.height / 2,
-      `${reason}\n${this.score} points scored\nPress R to try again`,
+      `${reason}\n${this.score} points scored${this.player2EndText()}\nPress R to try again`,
       { font: '24px monospace', color: '#ffffff', align: 'center', lineSpacing: 12 }
     ).setOrigin(0.5);
   }
