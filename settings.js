@@ -13,5 +13,9 @@ window.COIN_DASH = {
   chaserTurnDegPerSec: 90,
   comboWindowMs: 2000,
   comboMax: 5,
-  colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a, chaser: 0xb36bff }
+  magnetIntervalMs: 10000,
+  magnetDurationMs: 5000,
+  magnetRadius: 150,
+  magnetPullSpeed: 140,
+  colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a, chaser: 0xb36bff, magnet: 0x4da6ff }
 };

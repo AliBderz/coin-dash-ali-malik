@@ -37,6 +37,7 @@ class CoinDash extends Phaser.Scene {
     });
     this.physics.add.overlap(this.player, this.drones, () => this.finish('A drone caught you!'));
     this.spawnChaser();
+    this.createMagnet();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
@@ -125,6 +126,54 @@ class CoinDash extends Phaser.Scene {
     if (this.time.now - this.lastCoinTime > COIN_DASH.comboWindowMs) this.combo = 1;
   }
 
+  createMagnet() {
+    const c = COIN_DASH;
+    this.magnetUntil = 0;
+    this.nextMagnetAt = this.time.now + c.magnetIntervalMs;
+    // One pickup is reused for every spawn; it stays hidden and disabled until the first is due.
+    this.magnet = this.add.rectangle(0, 0, 20, 20, c.colors.magnet).setVisible(false);
+    this.physics.add.existing(this.magnet);
+    this.magnet.body.enable = false;
+    this.physics.add.overlap(this.player, this.magnet, () => {
+      if (this.finished) return;
+      this.magnet.setVisible(false);
+      this.magnet.body.enable = false;
+      this.magnetUntil = this.time.now + c.magnetDurationMs;
+    });
+  }
+
+  placeMagnet() {
+    const c = COIN_DASH;
+    let x, y;
+    do {
+      x = Phaser.Math.Between(25, c.width - 25);
+      y = Phaser.Math.Between(70, c.height - 25);
+    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 60);
+    this.magnet.body.reset(x, y);
+    this.magnet.body.enable = true;
+    this.magnet.setVisible(true);
+  }
+
+  updateMagnet() {
+    const c = COIN_DASH;
+    if (this.time.now >= this.nextMagnetAt) {
+      this.placeMagnet();
+      this.nextMagnetAt += c.magnetIntervalMs;
+    }
+    const inRange = Phaser.Math.Distance.Between(this.coin.x, this.coin.y, this.player.x, this.player.y) <= c.magnetRadius;
+    if (this.time.now < this.magnetUntil && inRange) {
+      const angle = Phaser.Math.Angle.Between(this.coin.x, this.coin.y, this.player.x, this.player.y);
+      this.coin.body.setVelocity(Math.cos(angle) * c.magnetPullSpeed, Math.sin(angle) * c.magnetPullSpeed);
+    } else {
+      this.coin.body.setVelocity(0, 0);
+    }
+  }
+
+  magnetHud() {
+    const left = this.magnetUntil - this.time.now;
+    return left > 0 ? `   Magnet: ${(Math.ceil(left / 100) / 10).toFixed(1)}s` : '';
+  }
+
   update(time, delta) {
     if (this.finished) return;
     const dx = Number(this.cursors.right.isDown || this.keys.D.isDown)
@@ -135,8 +184,9 @@ class CoinDash extends Phaser.Scene {
     this.player.body.setVelocity(direction.x, direction.y);
     this.steerChaser(delta);
     this.checkComboLapse();
+    this.updateMagnet();
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
-    this.hud.setText(`Score: ${this.score}            Combo: x${this.combo}            Time: ${seconds}s`);
+    this.hud.setText(`Score: ${this.score}   Combo: x${this.combo}   Time: ${seconds}s${this.magnetHud()}`);
     if (seconds === 0) this.finish('Time is up!');
   }
 
