@@ -5,8 +5,13 @@ window.COIN_DASH = {
   roundSeconds: 45,
   playerSpeed: 240,
   pointerStopDistance: 8, // px: the player stops this close to a held finger or mouse button
-  droneSpeed: 105,
-  droneCount: 3,
+  // Keys 1 / 2 / 3 pick a preset; normal keeps the original drone tuning.
+  defaultDifficulty: 'normal',
+  difficulties: {
+    easy: { label: 'Easy', droneCount: 2, droneSpeed: 80 },
+    normal: { label: 'Normal', droneCount: 3, droneSpeed: 105 },
+    hard: { label: 'Hard', droneCount: 5, droneSpeed: 150 }
+  },
   storageKey: 'coinDash.best', // localStorage key for the best score
   // Neon arcade: near-black backdrop, electric accents, white-hot edges.
   colors: { background: 0x05060f, grid: 0x1b2f6b, player: 0x19f3ff, coin: 0xffd23f, drone: 0xff2bd6,
