@@ -3,8 +3,9 @@
 Pair repository for AICODE 67723 Lab 3, created from the course template. Lab run on 1 Nov 2026.
 
 Collect coins, avoid drones, and survive a 45-second round. Move with arrow keys or WASD;
-press P (or Esc) to pause and resume, and R to restart. This is deliberately small so you can
-add features during the lab.
+press P (or Esc) to pause and resume, and R to restart. Keys 1 / 2 / 3 choose Easy / Normal / Hard
+(2 slow, 3 normal or 5 fast drones); the choice survives a restart. This is deliberately small so
+you can add features during the lab.
 
 **Play it here:** https://www.avivz.net/coin-dash/
 

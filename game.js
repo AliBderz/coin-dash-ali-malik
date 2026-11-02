@@ -4,6 +4,9 @@ class CoinDash extends Phaser.Scene {
 
   create() {
     const c = COIN_DASH;
+    // The registry outlives scene.restart(), so the chosen preset survives R and tap-to-restart.
+    this.difficulty = this.registry.get('difficulty') || c.defaultDifficulty;
+    this.preset = c.difficulties[this.difficulty];
     this.score = 0;
     this.finished = false;
     this.paused = false;
@@ -41,12 +44,16 @@ class CoinDash extends Phaser.Scene {
       delay: c.shield.every * 1000, loop: true, callback: this.spawnShield, callbackScope: this
     });
     this.drones = this.physics.add.group();
-    for (let i = 0; i < c.droneCount; i++) {
-      const drone = this.add.rectangle(90 + i * 270, 100, 26, 26, c.colors.drone).setStrokeStyle(2, c.colors.edge, 0.8);
+    // Original 270 px spacing, squeezed to fit 90..width-90 when a preset has more drones.
+    // The row sits at y = 100, 150 px above the player's centre start.
+    const { droneCount, droneSpeed } = this.preset;
+    const gap = Math.min(270, (c.width - 180) / Math.max(1, droneCount - 1));
+    for (let i = 0; i < droneCount; i++) {
+      const drone = this.add.rectangle(90 + i * gap, 100, 26, 26, c.colors.drone).setStrokeStyle(2, c.colors.edge, 0.8);
       this.drones.add(drone);
       drone.body.setCollideWorldBounds(true).setBounce(1, 1);
       const angle = (35 + i * 105) * Math.PI / 180;
-      drone.body.setVelocity(Math.cos(angle) * c.droneSpeed, Math.sin(angle) * c.droneSpeed);
+      drone.body.setVelocity(Math.cos(angle) * droneSpeed, Math.sin(angle) * droneSpeed);
     }
     // Bubble drawn around the player while a shield is active; it follows the player in update().
     this.shieldRing = this.add.circle(this.player.x, this.player.y, 22, c.shield.color, 0.15)
@@ -68,9 +75,11 @@ class CoinDash extends Phaser.Scene {
       this.finish('A drone caught you!');
     });
     this.cursors = this.input.keyboard.createCursorKeys();
-    // Registering R, P and ESC as keys makes their keydown events ignore key auto-repeat.
-    this.keys = this.input.keyboard.addKeys('W,A,S,D,R,P,ESC');
+    // Registering R, P, ESC and 1-3 as keys makes their keydown events ignore key auto-repeat.
+    this.keys = this.input.keyboard.addKeys('W,A,S,D,R,P,ESC,ONE,TWO,THREE');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
+    ['easy', 'normal', 'hard'].forEach((name, i) => this.input.keyboard.on(
+      `keydown-${['ONE', 'TWO', 'THREE'][i]}`, () => { this.registry.set('difficulty', name); this.scene.restart(); }));
     this.input.keyboard.on('keydown-P', () => this.togglePause());
     this.input.keyboard.on('keydown-ESC', () => this.togglePause());
     this.input.keyboard.on('keydown-M', () => this.sounds.toggleMute());
@@ -175,7 +184,7 @@ class CoinDash extends Phaser.Scene {
     // Send the drone straight away from the shielded player at its normal speed.
     const away = new Phaser.Math.Vector2(drone.x - this.player.x, drone.y - this.player.y);
     if (away.lengthSq() === 0) away.set(1, 0);
-    away.normalize().scale(COIN_DASH.droneSpeed);
+    away.normalize().scale(this.preset.droneSpeed);
     drone.body.setVelocity(away.x, away.y);
   }
 
@@ -205,7 +214,7 @@ class CoinDash extends Phaser.Scene {
     // body.center already holds this frame's position; player.x only catches up after update().
     this.shieldRing.setPosition(this.player.body.center.x, this.player.body.center.y).setVisible(shield > 0);
     this.drawScore(shield);
-    this.timerHud.setText(`Time: ${seconds}s`);
+    this.timerHud.setText(`${this.preset.label}   Time: ${seconds}s`);
     if (seconds === 0) {
       this.sounds.timeUp();
       this.finish('Time is up!');
