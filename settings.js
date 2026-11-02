@@ -11,5 +11,7 @@ window.COIN_DASH = {
   levelDroneSafeDistance: 150,
   chaserSpeedFactor: 0.7,
   chaserTurnDegPerSec: 90,
+  comboWindowMs: 2000,
+  comboMax: 5,
   colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a, chaser: 0xb36bff }
 };

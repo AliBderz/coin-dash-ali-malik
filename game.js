@@ -7,6 +7,8 @@ class CoinDash extends Phaser.Scene {
     this.score = 0;
     this.finished = false;
     this.deadline = this.time.now + c.roundSeconds * 1000;
+    this.combo = 1;
+    this.lastCoinTime = -Infinity; // No previous coin, so the first coin always scores at x1.
     this.physics.world.setBounds(0, 44, c.width, c.height - 44);
     this.add.grid(c.width / 2, c.height / 2, c.width, c.height, 40, 40,
       c.colors.background, 1, 0x24334b, 0.45);
@@ -29,7 +31,7 @@ class CoinDash extends Phaser.Scene {
     this.setupLevels();
     this.physics.add.overlap(this.player, this.coin, () => {
       if (this.finished) return;
-      this.score++;
+      this.collectCoinScore();
       this.placeCoin();
       this.countCoin();
     });
@@ -111,6 +113,18 @@ class CoinDash extends Phaser.Scene {
     this.chaser.body.setVelocity(Math.cos(this.chaserHeading) * speed, Math.sin(this.chaserHeading) * speed);
   }
 
+  collectCoinScore() {
+    const c = COIN_DASH;
+    const withinWindow = this.time.now - this.lastCoinTime <= c.comboWindowMs;
+    this.combo = withinWindow ? Math.min(this.combo + 1, c.comboMax) : 1;
+    this.lastCoinTime = this.time.now;
+    this.score += this.combo;
+  }
+
+  checkComboLapse() {
+    if (this.time.now - this.lastCoinTime > COIN_DASH.comboWindowMs) this.combo = 1;
+  }
+
   update(time, delta) {
     if (this.finished) return;
     const dx = Number(this.cursors.right.isDown || this.keys.D.isDown)
@@ -120,8 +134,9 @@ class CoinDash extends Phaser.Scene {
     const direction = new Phaser.Math.Vector2(dx, dy).normalize().scale(COIN_DASH.playerSpeed);
     this.player.body.setVelocity(direction.x, direction.y);
     this.steerChaser(delta);
+    this.checkComboLapse();
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
-    this.hud.setText(`Coins: ${this.score}                       Time: ${seconds}s`);
+    this.hud.setText(`Score: ${this.score}            Combo: x${this.combo}            Time: ${seconds}s`);
     if (seconds === 0) this.finish('Time is up!');
   }
 
@@ -132,7 +147,7 @@ class CoinDash extends Phaser.Scene {
     const c = COIN_DASH;
     this.add.rectangle(c.width / 2, c.height / 2, 460, 150, 0x0a1120, 0.95);
     this.add.text(c.width / 2, c.height / 2,
-      `${reason}\n${this.score} coins collected\nPress R to try again`,
+      `${reason}\n${this.score} points scored\nPress R to try again`,
       { font: '24px monospace', color: '#ffffff', align: 'center', lineSpacing: 12 }
     ).setOrigin(0.5);
   }
