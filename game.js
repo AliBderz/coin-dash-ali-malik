@@ -26,10 +26,12 @@ class CoinDash extends Phaser.Scene {
       const angle = (35 + i * 105) * Math.PI / 180;
       drone.body.setVelocity(Math.cos(angle) * c.droneSpeed, Math.sin(angle) * c.droneSpeed);
     }
+    this.setupLevels();
     this.physics.add.overlap(this.player, this.coin, () => {
       if (this.finished) return;
       this.score++;
       this.placeCoin();
+      this.countCoin();
     });
     this.physics.add.overlap(this.player, this.drones, () => this.finish('A drone caught you!'));
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -47,6 +49,46 @@ class CoinDash extends Phaser.Scene {
     } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < 60);
     this.coin.setPosition(x, y);
     this.coin.body.reset(x, y);
+  }
+
+  setupLevels() {
+    this.coinsCollected = 0;
+    this.level = 1;
+    // Separate from the main HUD line, right-aligned so it always fits the canvas.
+    this.levelText = this.add.text(COIN_DASH.width - 18, 12, 'Level: 1',
+      { font: '18px monospace', color: '#ffffff' }).setOrigin(1, 0);
+  }
+
+  countCoin() {
+    this.coinsCollected++;
+    if (this.coinsCollected % COIN_DASH.coinsPerLevel === 0) this.levelUp();
+  }
+
+  levelUp() {
+    const c = COIN_DASH;
+    this.level++;
+    this.levelText.setText(`Level: ${this.level}`);
+    const speed = c.droneSpeed * Math.pow(c.levelSpeedFactor, this.level - 1);
+    this.drones.getChildren().forEach((drone) => {
+      const velocity = drone.body.velocity.clone().setLength(speed);
+      drone.body.setVelocity(velocity.x, velocity.y);
+    });
+    this.spawnLevelDrone(speed);
+  }
+
+  spawnLevelDrone(speed) {
+    const c = COIN_DASH;
+    // Keep clear of the player so a level-up is never an instant death.
+    let x, y;
+    do {
+      x = Phaser.Math.Between(25, c.width - 25);
+      y = Phaser.Math.Between(70, c.height - 25);
+    } while (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < c.levelDroneSafeDistance);
+    const drone = this.add.rectangle(x, y, 26, 26, c.colors.drone);
+    this.drones.add(drone);
+    drone.body.setCollideWorldBounds(true).setBounce(1, 1);
+    const angle = Phaser.Math.Between(0, 359) * Math.PI / 180;
+    drone.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
   }
 
   update() {
