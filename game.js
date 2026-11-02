@@ -10,14 +10,14 @@ class CoinDash extends Phaser.Scene {
     this.combo = 1;
     this.lastCoinTime = -Infinity; // No previous coin, so the first coin always scores at x1.
     this.physics.world.setBounds(0, 44, c.width, c.height - 44);
-    this.add.grid(c.width / 2, c.height / 2, c.width, c.height, 40, 40,
-      c.colors.background, 1, 0x24334b, 0.45);
-    this.hud = this.add.text(18, 12, '', { font: '18px monospace', color: '#ffffff' });
+    this.add.grid(c.width / 2, c.height / 2, c.width, c.height, c.gridSize, c.gridSize,
+      c.colors.background, 0, c.gridColor, 0.45);
+    this.hud = this.add.text(18, 12, '', { font: c.hudFont, color: c.hudColor });
     this.player = this.add.rectangle(c.width / 2, c.height / 2, 24, 24, c.colors.player);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
     this.createPlayer2();
-    this.coin = this.add.circle(100, 100, 9, c.colors.coin);
+    this.coin = this.add.rectangle(100, 100, 18, 18, c.colors.coin);
     this.physics.add.existing(this.coin);
     this.coin.body.setCircle(9);
     this.placeCoin();
@@ -280,7 +280,7 @@ class CoinDash extends Phaser.Scene {
     this.add.rectangle(c.width / 2, c.height / 2, 460, 150, 0x0a1120, 0.95);
     this.add.text(c.width / 2, c.height / 2,
       `${reason}\n${this.score} points scored${this.player2EndText()}\nPress R to try again`,
-      { font: '24px monospace', color: '#ffffff', align: 'center', lineSpacing: 12 }
+      { font: c.hudFont, color: '#ffffff', align: 'center', lineSpacing: 12 }
     ).setOrigin(0.5);
   }
 }
@@ -290,6 +290,7 @@ window.coinDashGame = new Phaser.Game({
   width: COIN_DASH.width,
   height: COIN_DASH.height,
   backgroundColor: COIN_DASH.colors.background,
+  pixelArt: true,
   physics: { default: 'arcade', arcade: { debug: false } },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_HORIZONTALLY },
   scene: CoinDash

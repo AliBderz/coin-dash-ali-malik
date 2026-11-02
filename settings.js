@@ -17,5 +17,10 @@ window.COIN_DASH = {
   magnetDurationMs: 5000,
   magnetRadius: 150,
   magnetPullSpeed: 140,
-  colors: { background: 0x101c31, player: 0x71e8ce, coin: 0xffd166, drone: 0xff657a, chaser: 0xb36bff, magnet: 0x4da6ff, player2: 0xff9ff3 }
+  colors: { background: 0x000000, player: 0x00ff66, coin: 0xffff00, drone: 0xff0044, chaser: 0xbb44ff, magnet: 0x3399ff, player2: 0xff00ff },
+  gridSize: 8,
+  gridColor: 0x223355,
+  hudColor: '#00ffff',
+  // An object, because Phaser splits a font string on spaces and would break the family list.
+  hudFont: { fontStyle: 'bold', fontSize: '18px', fontFamily: '"Courier New", Courier, monospace' }
 };
